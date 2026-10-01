@@ -50,9 +50,9 @@ fn rand_byte(a: &mut [u8]) {
 }
 fn main() {
     let (input, output, d, e, sigs_check) = parse_args();
-    if e == true {
+    if e {
         encrypt(input, output);
-    } else if d == true {
+    } else if d {
         decrypt(input, output, sigs_check);
     }
 }
@@ -115,14 +115,14 @@ fn encrypt(input: String, output: String) {
     salts[224..256].copy_from_slice(&big_s.7);
     r9.extend_from_slice(&salts);
     let r10 = slhdsa_sign(slhdsa_ks.clone(), &r9);
-    r9.extend_from_slice(&r10.to_bytes().to_vec());
+    r9.extend_from_slice(r10.to_bytes());
     let va1 = Entry::new("arypto", "ml-dsa key").expect("keyring error:");
     let _ = write_file(&output, &BASE64_STANDARD.encode(r9));
     let _ = va1.set_secret(&seed);
     let va2 = Entry::new("arypto", "slh-dsa s key").expect("keyring error:");
-    let _ = va2.set_secret(&slhdsa_ks.clone().secret_key().to_vec());
+    let _ = va2.set_secret(slhdsa_ks.clone().secret_key());
     let va3 = Entry::new("arypto", "slh-dsa p key").expect("keyring error:");
-    let _ = va3.set_secret(&slhdsa_ks.clone().public_key().to_vec());
+    let _ = va3.set_secret(slhdsa_ks.clone().public_key());
 }
 
 fn decrypt(input: String, output: String, s: bool) {
@@ -133,8 +133,7 @@ fn decrypt(input: String, output: String, s: bool) {
         .decode(read_file_mmap(input).expect("error"))
         .expect("error this");
     let r17: Vec<u8>;
-    let result: &[u8];
-    if !s {
+    let result: &[u8] = if !s {
         const N: usize = 29792;
         let r1 = &data[..data.len() - N];
         let slsig = &data[data.len() - N..];
@@ -178,11 +177,11 @@ fn decrypt(input: String, output: String, s: bool) {
         const N3: usize = 128;
         let nc1 = &r2[r2.len() - N3..].try_into().expect("error 163");
         let r3 = &r2[..r2.len() - N3];
-        let r4 = threefish_encrypt(&threefish_key, r3, &nc1);
+        let r4 = threefish_encrypt(&threefish_key, r3, nc1);
         const N4: usize = 12;
         let nc2 = &r4[r4.len() - N4..].try_into().expect("error 167");
         let r5 = &r4[..r4.len() - N4];
-        let r6 = aes_decrypt(&r5, &aes_key, *nc2);
+        let r6 = aes_decrypt(r5, &aes_key, *nc2);
         const N5: usize = 16;
         let nc3 = &r6[r6.len() - N5..].try_into().expect("error 171");
         let r7 = &r6[..r6.len() - N5];
@@ -220,7 +219,7 @@ fn decrypt(input: String, output: String, s: bool) {
         let nc7 = &r15[r15.len() - N10..].try_into().expect("error 201");
         let r16 = &r15[..r15.len() - N10];
         r17 = camellia_decrypt(camellia_128_key, *nc7, r16);
-        result = &r17;
+        &r17
     } else {
         const N: usize = 29792;
         let r1 = &data[..data.len() - N];
@@ -249,11 +248,11 @@ fn decrypt(input: String, output: String, s: bool) {
         const N3: usize = 128;
         let nc1 = &r2[r2.len() - N3..].try_into().expect("error 163");
         let r3 = &r2[..r2.len() - N3];
-        let r4 = threefish_encrypt(&threefish_key, r3, &nc1);
+        let r4 = threefish_encrypt(&threefish_key, r3, nc1);
         const N4: usize = 12;
         let nc2 = &r4[r4.len() - N4..].try_into().expect("error 167");
         let r5 = &r4[..r4.len() - N4];
-        let r6 = aes_decrypt(&r5, &aes_key, *nc2);
+        let r6 = aes_decrypt(r5, &aes_key, *nc2);
         const N5: usize = 16;
         let nc3 = &r6[r6.len() - N5..].try_into().expect("error 171");
         let r7 = &r6[..r6.len() - N5];
@@ -276,8 +275,8 @@ fn decrypt(input: String, output: String, s: bool) {
         let nc7 = &r15[r15.len() - N10..].try_into().expect("error 201");
         let r16 = &r15[..r15.len() - N10];
         r17 = camellia_decrypt(camellia_128_key, *nc7, r16);
-        result = &r17;
-    }
+        &r17
+    };
 
     let _ = write_fileb(&output, result);
 }

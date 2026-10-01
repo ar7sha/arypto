@@ -4,8 +4,7 @@ pub mod skdf {
     fn streebog256(a: &[u8]) -> [u8; 32] {
         let mut hasher = Streebog256::new();
         hasher.update(a);
-        let b = hasher.finalize().into();
-        b
+        hasher.finalize().into()
     }
 
     fn streebog_mac(input: impl AsRef<[u8]>, k: impl AsRef<[u8]>) -> [u8; 32] {
@@ -65,8 +64,7 @@ pub mod jkdf {
     fn jh2566(a: &[u8]) -> [u8; 32] {
         let mut hasher = Jh256::new();
         hasher.update(a);
-        let b = hasher.finalize().into();
-        b
+        hasher.finalize().into()
     }
 
     fn jh256_mac(input: impl AsRef<[u8]>, k: impl AsRef<[u8]>) -> [u8; 32] {

@@ -1,6 +1,4 @@
 mod kdf_streebog_jh;
-use blake3;
-use hmac_sha256;
 use kdf_streebog_jh::jkdf;
 use kdf_streebog_jh::skdf;
 use ring::{self, rand::SecureRandom};
@@ -80,17 +78,17 @@ pub fn preparing_keys(
     fn shkdf_and_jhkdf_pt(pharsepass: String) -> ([u8; 32], ([u8; 32], [u8; 32])) {
         let mut salt: [u8; 32] = [0; 32];
         rand_byte(&mut salt);
-        let context = format!("aes 256 gcm key {}", hex::encode(salt.to_owned()));
-        let prk1 = skdf::extract(salt.to_owned(), pharsepass.clone());
+        let context = format!("aes 256 gcm key {}", hex::encode(salt));
+        let prk1 = skdf::extract(salt, pharsepass.clone());
         let mut a = [0u8; 32];
-        skdf::expand(&mut a, prk1, context.to_owned());
+        skdf::expand(&mut a, prk1, &context);
         let mut salt2: [u8; 32] = [0; 32];
 
         rand_byte(&mut salt2);
-        let context2 = format!("aes 256 gcm key {}", hex::encode(salt2.to_owned()));
-        let prk2 = jkdf::extract(salt2.to_owned(), pharsepass.clone());
+        let context2 = format!("aes 256 gcm key {}", hex::encode(salt2));
+        let prk2 = jkdf::extract(salt2, pharsepass.clone());
         let mut a2 = [0u8; 32];
-        jkdf::expand(&mut a2, prk2, context2.to_owned());
+        jkdf::expand(&mut a2, prk2, &context2);
         use sha3::{Digest, Sha3_256};
         let mut hasher = Sha3_256::new();
         hasher.update(format!("{}{}", hex::encode(a), hex::encode(a2)));
@@ -161,15 +159,15 @@ pub fn rebuild_keys(
         (serpent_key, twofish_key, threefish_key)
     }
     fn shkdf_and_jhkdf_pt(pharsepass: String, aes: [u8; 32], ae: [u8; 32]) -> [u8; 32] {
-        let context = format!("aes 256 gcm key {}", hex::encode(aes.to_owned()));
-        let prk1 = skdf::extract(aes.to_owned(), pharsepass.clone());
+        let context = format!("aes 256 gcm key {}", hex::encode(aes));
+        let prk1 = skdf::extract(aes, pharsepass.clone());
         let mut a = [0u8; 32];
-        skdf::expand(&mut a, prk1, context.to_owned());
+        skdf::expand(&mut a, prk1, &context);
 
-        let context2 = format!("aes 256 gcm key {}", hex::encode(ae.to_owned()));
-        let prk2 = jkdf::extract(ae.to_owned(), pharsepass.clone());
+        let context2 = format!("aes 256 gcm key {}", hex::encode(ae));
+        let prk2 = jkdf::extract(ae, pharsepass.clone());
         let mut a2 = [0u8; 32];
-        jkdf::expand(&mut a2, prk2, context2.to_owned());
+        jkdf::expand(&mut a2, prk2, &context2);
         use sha3::{Digest, Sha3_256};
         let mut hasher = Sha3_256::new();
         hasher.update(format!("{}{}", hex::encode(a), hex::encode(a2)));

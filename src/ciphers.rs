@@ -13,13 +13,11 @@ pub mod camellia {
 
     pub fn camellia_encrypt(key: [u8; 32], nonce: [u8; 16], plaintext: &[u8]) -> Vec<u8> {
         let cipher = CamelliaCipher::noxtls_new(&key).expect("error in camellia cipher");
-        let ciphertext = noxtls_camellia_ctr_encrypt(&cipher, &nonce, plaintext);
-        ciphertext
+        noxtls_camellia_ctr_encrypt(&cipher, &nonce, plaintext)
     }
     pub fn camellia_decrypt(key: [u8; 32], nonce: [u8; 16], ciphertext: &[u8]) -> Vec<u8> {
         let cipher = CamelliaCipher::noxtls_new(&key).expect("error in camellia cipher");
-        let plaintext = noxtls_camellia_ctr_decrypt(&cipher, &nonce, ciphertext);
-        plaintext
+        noxtls_camellia_ctr_decrypt(&cipher, &nonce, ciphertext)
     }
 }
 
@@ -27,12 +25,10 @@ pub mod mldsa {
     use ml_dsa::{Keypair, MlDsa87, Signature, Signer, SigningKey, Verifier};
 
     pub fn mldsa_generatekey(seed: [u8; 32]) -> SigningKey<MlDsa87> {
-        let sk = SigningKey::<MlDsa87>::from_seed(&seed.into());
-        sk
+        SigningKey::<MlDsa87>::from_seed(&seed.into())
     }
     pub fn mldsa_sign(sk: SigningKey<MlDsa87>, msg: &[u8]) -> Signature<MlDsa87> {
-        let sig = sk.sign(msg);
-        sig
+        sk.sign(msg)
     }
     pub fn mldsa_verify(sk: SigningKey<MlDsa87>, msg: &[u8], sig: Signature<MlDsa87>) -> bool {
         sk.verifying_key().verify(msg, &sig).is_ok()
@@ -42,22 +38,20 @@ pub mod ascon128 {
     use ascon_aead::aead::{Aead, KeyInit};
     use ascon_aead::{AsconAead128, AsconAead128Key, AsconAead128Nonce};
     pub fn ascon_encrypt(key: [u8; 16], nonce: [u8; 16], plaintext: &[u8]) -> Vec<u8> {
-        let k = AsconAead128Key::from_slice(&key);
-        let cipher = AsconAead128::new(k);
-        let nonce = AsconAead128Nonce::from_slice(&nonce);
-        let ciphertext = cipher
-            .encrypt(nonce, plaintext.as_ref())
-            .expect("encryption failure!(ascon)");
-        ciphertext
+        let k = AsconAead128Key::from(key);
+        let cipher = AsconAead128::new(&k);
+        let nonce = AsconAead128Nonce::from(nonce);
+        cipher
+            .encrypt(&nonce, plaintext.as_ref())
+            .expect("encryption failure!(ascon)")
     }
     pub fn ascon_decrypt(key: [u8; 16], nonce: [u8; 16], ciphertext: &[u8]) -> Vec<u8> {
-        let k = AsconAead128Key::from_slice(&key);
-        let cipher = AsconAead128::new(k);
-        let nonce = AsconAead128Nonce::from_slice(&nonce);
-        let plaintext = cipher
-            .decrypt(nonce, ciphertext.as_ref())
-            .expect("decryption failure!");
-        plaintext
+        let k = AsconAead128Key::from(key);
+        let cipher = AsconAead128::new(&k);
+        let nonce = AsconAead128Nonce::from(nonce);
+        cipher
+            .decrypt(&nonce, ciphertext.as_ref())
+            .expect("decryption failure!")
     }
 }
 pub mod xchacha20 {
@@ -84,13 +78,11 @@ pub mod aes256 {
     };
     pub fn aes_encrypt(plaintext: &[u8], key: &[u8; 32], nonce: [u8; 12]) -> Vec<u8> {
         let cipher = Aes256Gcm::new(key.into());
-        let ciphertext = cipher.encrypt(&nonce.into(), plaintext).expect("error");
-        ciphertext
+        cipher.encrypt(&nonce.into(), plaintext).expect("error")
     }
     pub fn aes_decrypt(ciphertext: &[u8], key: &[u8; 32], nonce: [u8; 12]) -> Vec<u8> {
         let cipher = Aes256Gcm::new(key.into());
-        let plaintext = cipher.decrypt(&nonce.into(), ciphertext).expect("error");
-        plaintext
+        cipher.decrypt(&nonce.into(), ciphertext).expect("error")
     }
 }
 pub fn serpent(key: [u8; 32], nonce: &[u8; 16], text: &[u8]) -> Vec<u8> {
@@ -129,7 +121,7 @@ pub fn slhdsa_verify(kp: SlhDsaKeyPair, sig: SlhDsaSignature, msg: &[u8]) -> boo
     slh_dsa::safe_api::SlhDsaSignature::verify(
         sig.to_bytes(),
         kp.public_key(),
-        msg.into(),
+        msg,
         SLH_DSA_SHAKE_256S,
     )
 }
