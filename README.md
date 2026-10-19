@@ -79,7 +79,14 @@ cd arypto
 cargo build --release
 
 # Encrypt
-./target/release/arypto -e input.txt output.enc
+./target/release/arypto -i input.txt -e -o output.ary
 
 # Decrypt
-./target/release/arypto -d output.enc decrypted.txt
+./target/release/arypto -i input.ary -d -o output.txt
+
+# Decrypt(skip signatures(slh-dsa , ml-dsa) check)
+./target/release/arypto -i input.ary -d -o output.txt -s
+
+# Help about flags
+./target/release/arypto --help
+
