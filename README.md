@@ -43,10 +43,11 @@ Each layer appends its **nonce/IV** to the output, and the next layer encrypts t
 
 ### 4. Key Storage 
 - The **ML-DSA seed** and **SLH-DSA keypair** are stored in the **OS keyring** (via the `keyring` crate).
-- If you decrypt without the keyring, **signature verification is skipped** (with a warning).
+- If you decrypt without the keyring, it will panic but you can skip checking signatures with flag `-s`.
 
 ### 5. Output Format
-- The final encrypted file is **Base64-encoded**.
+- The file starts with the 4-byte MAGIC_BYTES (`AOXR`), followed by the encrypted payload.
+- **No Base64.** The `.ary` file is raw binary.
 - Encrypted file contains: ciphertext + nonces + salts + signatures.
 
 ### 6. Memory Safety
