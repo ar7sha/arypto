@@ -40,19 +40,20 @@ pub mod skdf {
 
     pub fn expand(out: &mut [u8], prk: impl AsRef<[u8]>, info: impl AsRef<[u8]>) {
         let info = info.as_ref();
+        let prk = prk.as_ref();
         let mut counter: u8 = 1;
         assert!(out.len() < 0xff * 32);
         let mut i: usize = 0;
         while i < out.len() {
-            let mut hmac = Streebog256::new();
-            hmac.update(&prk);
+            let mut hmac_input = Vec::new();
             if i != 0 {
-                hmac.update(&out[i - 32..][..32]);
+                hmac_input.extend_from_slice(&out[i - 32..i]);
             }
-            hmac.update(info);
-            hmac.update([counter]);
+            hmac_input.extend_from_slice(info);
+            hmac_input.push(counter); // محاسبه T(i) = HMAC(prk, hmac_input)        
+            let t = streebog_mac(&hmac_input, prk);
             let left = core::cmp::min(32, out.len() - i);
-            out[i..][..left].copy_from_slice(&hmac.finalize()[..left]);
+            out[i..][..left].copy_from_slice(&t[..left]);
             counter += 1;
             i += 32;
         }
@@ -61,18 +62,19 @@ pub mod skdf {
 
 pub mod jkdf {
     use jh::{Digest, Jh256};
-    fn jh2566(a: &[u8]) -> [u8; 32] {
+
+    fn jh256(a: &[u8]) -> [u8; 32] {
         let mut hasher = Jh256::new();
         hasher.update(a);
         hasher.finalize().into()
     }
 
-    fn jh256_mac(input: impl AsRef<[u8]>, k: impl AsRef<[u8]>) -> [u8; 32] {
+    fn jh_mac(input: impl AsRef<[u8]>, k: impl AsRef<[u8]>) -> [u8; 32] {
         let input = input.as_ref();
         let k = k.as_ref();
         let mut hk = [0u8; 32];
         let k2 = if k.len() > 64 {
-            hk.copy_from_slice(&jh2566(k));
+            hk.copy_from_slice(&jh256(k));
             &hk
         } else {
             k
@@ -95,24 +97,25 @@ pub mod jkdf {
     }
 
     pub fn extract(salt: impl AsRef<[u8]>, ikm: impl AsRef<[u8]>) -> [u8; 32] {
-        jh256_mac(ikm, salt)
+        jh_mac(ikm, salt)
     }
 
     pub fn expand(out: &mut [u8], prk: impl AsRef<[u8]>, info: impl AsRef<[u8]>) {
         let info = info.as_ref();
+        let prk = prk.as_ref();
         let mut counter: u8 = 1;
         assert!(out.len() < 0xff * 32);
         let mut i: usize = 0;
         while i < out.len() {
-            let mut hmac = Jh256::new();
-            hmac.update(&prk);
+            let mut hmac_input = Vec::new();
             if i != 0 {
-                hmac.update(&out[i - 32..][..32]);
+                hmac_input.extend_from_slice(&out[i - 32..i]);
             }
-            hmac.update(info);
-            hmac.update([counter]);
+            hmac_input.extend_from_slice(info);
+            hmac_input.push(counter); // T(i) = HMAC(prk, hmac_input)        
+            let t = jh_mac(&hmac_input, prk);
             let left = core::cmp::min(32, out.len() - i);
-            out[i..][..left].copy_from_slice(&hmac.finalize()[..left]);
+            out[i..][..left].copy_from_slice(&t[..left]);
             counter += 1;
             i += 32;
         }

@@ -7,16 +7,15 @@ use slh_dsa::params::SLH_DSA_SHAKE_256S;
 use slh_dsa::safe_api::SlhDsaKeyPair;
 use threefish::Threefish1024;
 use twofish::Twofish;
-
 pub mod camellia {
     use noxtls_crypto::{CamelliaCipher, noxtls_camellia_ctr_decrypt, noxtls_camellia_ctr_encrypt};
 
-    pub fn camellia_encrypt(key: [u8; 32], nonce: [u8; 16], plaintext: &[u8]) -> Vec<u8> {
-        let cipher = CamelliaCipher::noxtls_new(&key).expect("error in camellia cipher");
+    pub fn camellia_encrypt(key: &[u8; 32], nonce: [u8; 16], plaintext: &[u8]) -> Vec<u8> {
+        let cipher = CamelliaCipher::noxtls_new(key).expect("error in camellia cipher");
         noxtls_camellia_ctr_encrypt(&cipher, &nonce, plaintext)
     }
-    pub fn camellia_decrypt(key: [u8; 32], nonce: [u8; 16], ciphertext: &[u8]) -> Vec<u8> {
-        let cipher = CamelliaCipher::noxtls_new(&key).expect("error in camellia cipher");
+    pub fn camellia_decrypt(key: &[u8; 32], nonce: [u8; 16], ciphertext: &[u8]) -> Vec<u8> {
+        let cipher = CamelliaCipher::noxtls_new(key).expect("error in camellia cipher");
         noxtls_camellia_ctr_decrypt(&cipher, &nonce, ciphertext)
     }
 }
@@ -35,18 +34,20 @@ pub mod mldsa {
     }
 }
 pub mod ascon128 {
+
     use ascon_aead::aead::{Aead, KeyInit};
     use ascon_aead::{AsconAead128, AsconAead128Key, AsconAead128Nonce};
-    pub fn ascon_encrypt(key: [u8; 16], nonce: [u8; 16], plaintext: &[u8]) -> Vec<u8> {
-        let k = AsconAead128Key::from(key);
+    use zeroize::Zeroizing;
+    pub fn ascon_encrypt(key: &[u8; 16], nonce: [u8; 16], plaintext: &[u8]) -> Vec<u8> {
+        let k = Zeroizing::new(AsconAead128Key::from(*key));
         let cipher = AsconAead128::new(&k);
         let nonce = AsconAead128Nonce::from(nonce);
         cipher
             .encrypt(&nonce, plaintext.as_ref())
             .expect("encryption failure!(ascon)")
     }
-    pub fn ascon_decrypt(key: [u8; 16], nonce: [u8; 16], ciphertext: &[u8]) -> Vec<u8> {
-        let k = AsconAead128Key::from(key);
+    pub fn ascon_decrypt(key: &[u8; 16], nonce: [u8; 16], ciphertext: &[u8]) -> Vec<u8> {
+        let k = Zeroizing::new(AsconAead128Key::from(*key));
         let cipher = AsconAead128::new(&k);
         let nonce = AsconAead128Nonce::from(nonce);
         cipher
@@ -59,13 +60,13 @@ pub mod xchacha20 {
         XChaCha20Poly1305,
         aead::{Aead, KeyInit},
     };
-    pub fn xchacha20_encrypt(key: [u8; 32], nonce: [u8; 24], plaintext: &[u8]) -> Vec<u8> {
-        let cipher = XChaCha20Poly1305::new(&key.into());
+    pub fn xchacha20_encrypt(key: &[u8; 32], nonce: [u8; 24], plaintext: &[u8]) -> Vec<u8> {
+        let cipher = XChaCha20Poly1305::new(key.into());
         let ciphertext = cipher.encrypt(&nonce.into(), plaintext);
         ciphertext.expect("error")
     }
-    pub fn xchacha20_decrypt(key: [u8; 32], nonce: [u8; 24], ciphertext: &[u8]) -> Vec<u8> {
-        let cipher = XChaCha20Poly1305::new(&key.into());
+    pub fn xchacha20_decrypt(key: &[u8; 32], nonce: [u8; 24], ciphertext: &[u8]) -> Vec<u8> {
+        let cipher = XChaCha20Poly1305::new(key.into());
         let plaintext = cipher.decrypt(&nonce.into(), ciphertext);
         plaintext.expect("error")
     }
@@ -85,8 +86,8 @@ pub mod aes256 {
         cipher.decrypt(&nonce.into(), ciphertext).expect("error")
     }
 }
-pub fn serpent(key: [u8; 32], nonce: &[u8; 16], text: &[u8]) -> Vec<u8> {
-    let block = Serpent::new_from_slice(&key).expect("len invalid");
+pub fn serpent(key: &[u8; 32], nonce: &[u8; 16], text: &[u8]) -> Vec<u8> {
+    let block = Serpent::new_from_slice(key).expect("len invalid");
     let core = CtrCore::<Serpent, flavors::Ctr128BE>::inner_iv_init(block, nonce.into());
     let mut cipher = StreamCipherCoreWrapper::from_core(core);
     let mut buffer = text.to_vec();
@@ -94,8 +95,8 @@ pub fn serpent(key: [u8; 32], nonce: &[u8; 16], text: &[u8]) -> Vec<u8> {
     buffer
 }
 
-pub fn twofish256(key: [u8; 32], nonce: &[u8; 16], text: &[u8]) -> Vec<u8> {
-    let block = Twofish::new_from_slice(&key).expect("len invalid");
+pub fn twofish256(key: &[u8; 32], nonce: &[u8; 16], text: &[u8]) -> Vec<u8> {
+    let block = Twofish::new_from_slice(key).expect("len invalid");
     let core = CtrCore::<Twofish, flavors::Ctr128BE>::inner_iv_init(block, nonce.into());
     let mut cipher = StreamCipherCoreWrapper::from_core(core);
     let mut buffer = text.to_vec();

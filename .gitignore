@@ -17,7 +17,7 @@ target
 # Contains mutation testing data
 **/mutants.out*/
 
-.aox
+**/.VsCodeCounter
 
 
 # RustRover
