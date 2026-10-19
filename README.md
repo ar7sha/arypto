@@ -46,7 +46,8 @@ Each layer appends its **nonce/IV** to the output, and the next layer encrypts t
 - If you decrypt without the keyring, **signature verification is skipped** (with a warning).
 
 ### 5. Output Format
-- The final encrypted file is **Base64-encoded**.
+- The file starts with the 4-byte MAGIC_BYTES (`AOXR`), followed by the encrypted payload.
+- **No Base64.** The `.ary` file is raw binary.
 - Encrypted file contains: ciphertext + nonces + salts + signatures.
 
 ### 6. Memory Safety
