@@ -1,6 +1,6 @@
 # 🦀 Arypto
 
-> **Multi-layer file encryption in Rust.** Because one cipher is never enough when you're paranoid.
+> **Multi-layer file encryption in Rust.** Because why not.
 
 [![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
